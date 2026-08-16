@@ -163,20 +163,28 @@ Project Structure
 CyberShield/
 │
 ├── backend/
-│   ├── models/
 │   ├── services/
+│   │   ├── test_detector.py
+│   │   ├── test_suspicious.py
+│   │   └── threat_detector.py
 │   ├── database.py
-│   └── main.py
+│   ├── init.py
+│   ├── main.py
+│   ├── models.py
+│   ├── schemas.py
+│   └── test_database.py
 │
 ├── frontend/
 │   ├── src/
 │   │   ├── App.jsx
 │   │   ├── App.css
+│   │   ├── index.css
 │   │   └── main.jsx
 │   ├── package.json
 │   └── vite.config.js
 │
+├── sample_logs/
+│   └── security_logs
+│
 ├── .gitignore
-├── README.md
-└── .env
-
+└── README.md
