@@ -1,0 +1,6 @@
+timestamp,ip_address,username,event_type,status,request,details
+2026-08-11 10:15:01,192.168.1.20,admin,LOGIN_FAILED,Failed,/login,Invalid password
+2026-08-11 10:15:03,192.168.1.20,admin,LOGIN_FAILED,Failed,/login,Invalid password
+2026-08-11 10:15:05,192.168.1.20,admin,LOGIN_FAILED,Failed,/login,Invalid password
+2026-08-11 10:16:10,192.168.1.25,user1,LOGIN_SUCCESS,Success,/login,Login successful
+2026-08-11 10:17:22,192.168.1.30,user2,HTTP_REQUEST,Success,/home,Normal request
