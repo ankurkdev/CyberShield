@@ -4,6 +4,26 @@ CyberShield is a cybersecurity log monitoring and threat detection system built 
 
 It collects security logs, detects suspicious activity, generates alerts, and provides a web dashboard for monitoring and managing detected threats.
 
+## Screenshots
+
+### Dashboard
+
+![CyberShield Dashboard](screenshots/dashboard.png)
+
+### Backend
+
+![CyberShield Backend](screenshots/backend.png)
+
+### Threat Summary and Recent Logs
+
+![Threat Summary and Recent Logs](screenshots/logs-and-threats.png)
+
+### API Documentation
+
+![Swagger API Documentation](screenshots/swagger-alerts%201.png)
+
+![Swagger API Documentation](screenshots/swagger-alerts%202.png)
+
 ## Features
 
 - Security log storage
