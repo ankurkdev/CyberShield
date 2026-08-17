@@ -10,6 +10,8 @@ import io
 from datetime import datetime
 
 from fastapi import FastAPI, UploadFile, File, Depends
+from pydantic import BaseModel
+
 from sqlalchemy.orm import Session
 
 from backend.database import Base, engine, get_db
@@ -59,6 +61,29 @@ async def upload_logs(
     reader = csv.DictReader(io.StringIO(text))
 
     inserted = 0
+
+    for row in reader:
+        log = Log(
+            timestamp=datetime.fromisoformat(row["timestamp"]),
+            ip_address=row["ip_address"],
+            username=row.get("username"),
+            event_type=row["event_type"],
+            status=row.get("status"),
+            request=row.get("request"),
+            details=row.get("details"),
+        )
+
+        db.add(log)
+        inserted += 1
+
+    db.commit()
+
+    return {
+        "filename": file.filename,
+        "message": "Logs uploaded successfully",
+        "records_inserted": inserted,
+    }
+
 
 @app.get("/logs")
 def get_logs(db: Session = Depends(get_db)):
@@ -115,7 +140,7 @@ def get_alerts(db: Session = Depends(get_db)):
         "alerts": alerts,
     }
 
-from pydantic import BaseModel
+
 
 
 class AlertStatusUpdate(BaseModel):

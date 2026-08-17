@@ -13,21 +13,22 @@ def detect_brute_force(db: Session):
         .all()
     )
 
-    attempts_by_ip = {}
+    attempts_by_account = {}
 
     for log in failed_logs:
-        attempts_by_ip.setdefault(log.ip_address, []).append(log)
+        key = (log.ip_address, log.username)
+        attempts_by_account.setdefault(key, []).append(log)
 
     threats = []
 
-    for ip_address, logs in attempts_by_ip.items():
+    for (ip_address, username), logs in attempts_by_account.items():
         if len(logs) >= FAILED_LOGIN_THRESHOLD:
             threats.append(
                 {
                     "threat_type": "BRUTE_FORCE",
                     "severity": "HIGH",
                     "ip_address": ip_address,
-                    "username": logs[0].username,
+                    "username": username,
                     "failed_attempts": len(logs),
                     "message": (
                         f"Possible brute-force attack detected from "
