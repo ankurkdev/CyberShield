@@ -100,22 +100,6 @@ def get_logs(db: Session = Depends(get_db)):
         "logs": logs,
     }
 
-    for row in reader:
-        log = Log(
-            timestamp=datetime.fromisoformat(row["timestamp"]),
-            ip_address=row["ip_address"],
-            username=row.get("username"),
-            event_type=row["event_type"],
-            status=row.get("status"),
-            request=row.get("request"),
-            details=row.get("details"),
-        )
-
-        db.add(log)
-        inserted += 1
-
-    db.commit()
-
     return {
         "filename": file.filename,
         "message": "Logs uploaded successfully",
@@ -159,8 +143,8 @@ def update_alert_status(
 
     if not alert:
         raise HTTPException(
-        status_code=404,
-        detail="Alert not found",
+            status_code=404,
+            detail="Alert not found",
     )
 
     status = update.status.strip().upper()
@@ -171,12 +155,12 @@ def update_alert_status(
              detail={
                  "message": "Invalid status",
                  "allowed_statuses": [
-                 "NEW",
-                 "REVIEWED",
-                 "RESOLVED",
-            ],
-        },
-    )
+                    "NEW",
+                    "REVIEWED",
+                    "RESOLVED",
+                ],
+            },
+        )
 
     alert.status = status
     db.commit()
