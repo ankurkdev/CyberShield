@@ -9,10 +9,16 @@ import csv
 import io
 from datetime import datetime
 
-from fastapi import FastAPI, UploadFile, File, Depends
-from pydantic import BaseModel
+from fastapi import FastAPI, UploadFile, File, Depends, HTTPException
 
 from sqlalchemy.orm import Session
+
+from backend.schemas import (
+    AlertStatusResponse,
+    AlertStatusUpdate,
+    AlertsResponse,
+    LogsResponse,
+)
 
 from backend.database import Base, engine, get_db
 from backend.models import Log, Alert
@@ -85,7 +91,7 @@ async def upload_logs(
     }
 
 
-@app.get("/logs")
+@app.get("/logs", response_model=LogsResponse)
 def get_logs(db: Session = Depends(get_db)):
     logs = db.query(Log).order_by(Log.timestamp.desc()).all()
 
@@ -127,7 +133,7 @@ def get_threats(db: Session = Depends(get_db)):
 
     return threats
 
-@app.get("/alerts")
+@app.get("/alerts", response_model=AlertsResponse)
 def get_alerts(db: Session = Depends(get_db)):
     alerts = (
         db.query(Alert)
@@ -140,14 +146,10 @@ def get_alerts(db: Session = Depends(get_db)):
         "alerts": alerts,
     }
 
-
-
-
-class AlertStatusUpdate(BaseModel):
-    status: str
-
-
-@app.patch("/alerts/{alert_id}")
+@app.patch(
+    "/alerts/{alert_id}",
+    response_model=AlertStatusResponse,
+)
 def update_alert_status(
     alert_id: int,
     update: AlertStatusUpdate,
@@ -156,19 +158,25 @@ def update_alert_status(
     alert = db.query(Alert).filter(Alert.id == alert_id).first()
 
     if not alert:
-        return {"error": "Alert not found"}
+        raise HTTPException(
+        status_code=404,
+        detail="Alert not found",
+    )
 
     status = update.status.strip().upper()
 
     if status not in {"NEW", "REVIEWED", "RESOLVED"}:
-        return {
-            "error": "Invalid status",
-            "allowed_statuses": [
-                "NEW",
-                "REVIEWED",
-                "RESOLVED",
+       raise HTTPException(
+             status_code=400,
+             detail={
+                 "message": "Invalid status",
+                 "allowed_statuses": [
+                 "NEW",
+                 "REVIEWED",
+                 "RESOLVED",
             ],
-        }
+        },
+    )
 
     alert.status = status
     db.commit()
