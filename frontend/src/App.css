@@ -46,6 +46,14 @@ body {
   background: #22c55e;
 }
 
+.status.offline {
+  color: #fca5a5;
+}
+
+.status.offline span {
+  background: #ef4444;
+}
+
 main {
   padding: 30px 40px;
   max-width: 1400px;

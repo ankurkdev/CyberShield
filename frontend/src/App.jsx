@@ -5,6 +5,7 @@ function App() {
   const [alerts, setAlerts] = useState([]);
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [backendConnected, setBackendConnected] = useState(false);
   const [alertFilter, setAlertFilter] = useState("ALL");
   const [logSearch, setLogSearch] = useState("");
 
@@ -15,6 +16,11 @@ function App() {
           fetch("http://127.0.0.1:8000/alerts"),
           fetch("http://127.0.0.1:8000/logs"),
         ]);
+
+        if (!alertsResponse.ok || !logsResponse.ok) {
+          throw new Error("Backend request failed");
+        }
+        setBackendConnected(true);
   
         const alertsData = await alertsResponse.json();
         const logsData = await logsResponse.json();
@@ -22,6 +28,7 @@ function App() {
         setAlerts(alertsData.alerts || []);
         setLogs(logsData.logs || []);
       } catch (error) {
+        setBackendConnected(false);
         console.error("Failed to load CyberShield data:", error);
       } finally {
         setLoading(false);
@@ -108,10 +115,10 @@ function App() {
           <p>Security Monitoring Dashboard</p>
         </div>
 
-        <div className="status">
-          <span></span>
-          Backend Connected
-        </div>
+        <div className={`status ${backendConnected ? "connected" : "offline"}`}>
+  <span></span>
+  {backendConnected ? "Backend Connected" : "Backend Offline"}
+</div>
       </header>
 
       <main>
@@ -153,10 +160,14 @@ function App() {
           </div>
 
           {loading ? (
-            <div className="message">Loading alerts...</div>
-          ) : alerts.length === 0 ? (
-            <div className="message">No threats detected.</div>
-          ) : (
+  <div className="message">Loading alerts...</div>
+) : filteredAlerts.length === 0 ? (
+  <div className="message">
+    {alerts.length === 0
+      ? "No threats detected."
+      : "No alerts match this filter."}
+  </div>
+) : (
             <div className="alerts">
               {filteredAlerts.map((alert) => (
                 <div className="alert" key={alert.id}>
