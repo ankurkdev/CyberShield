@@ -6,6 +6,7 @@ function App() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [backendConnected, setBackendConnected] = useState(false);
+  const [backendError, setBackendError] = useState("");
   const [alertFilter, setAlertFilter] = useState("ALL");
   const [logSearch, setLogSearch] = useState("");
 
@@ -21,6 +22,7 @@ function App() {
           throw new Error("Backend request failed");
         }
         setBackendConnected(true);
+        setBackendError("");
   
         const alertsData = await alertsResponse.json();
         const logsData = await logsResponse.json();
@@ -29,6 +31,7 @@ function App() {
         setLogs(logsData.logs || []);
       } catch (error) {
         setBackendConnected(false);
+        setBackendError("Unable to connect to the CyberShield backend.");
         console.error("Failed to load CyberShield data:", error);
       } finally {
         setLoading(false);
@@ -79,6 +82,13 @@ function App() {
     (alert) => alert.status === "NEW"
   ).length;
 
+  const reviewedAlerts = alerts.filter(
+    (alert) => alert.status === "REVIEWED"
+  ).length;
+  const resolvedAlerts = alerts.filter(
+    (alert) => alert.status === "RESOLVED"
+  ).length;
+
   const threatTypes = new Set(
     alerts.map((alert) => alert.threat_type)
   ).size;
@@ -122,6 +132,11 @@ function App() {
       </header>
 
       <main>
+      {backendError && (
+  <div className="message backend-error">
+    {backendError}
+  </div>
+)}
         <div className="cards">
           <div className="card">
             <h3>Total Logs</h3>
@@ -142,6 +157,16 @@ function App() {
             <h3>New Alerts</h3>
             <strong>{newAlerts}</strong>
           </div>
+
+          <div className="card">
+  <h3>Reviewed Alerts</h3>
+  <strong>{reviewedAlerts}</strong>
+</div>
+
+<div className="card">
+  <h3>Resolved Alerts</h3>
+  <strong>{resolvedAlerts}</strong>
+</div>
         </div>
 
         <section className="panel">
@@ -171,9 +196,9 @@ function App() {
             <div className="alerts">
               {filteredAlerts.map((alert) => (
                 <div className="alert" key={alert.id}>
-                  <div className="severity">
-                    {alert.severity}
-                  </div>
+                  <div className={`severity severity-${alert.severity.toLowerCase()}`}>
+  {alert.severity}
+</div>
 
                   <div className="alert-info">
                     <h3>{alert.threat_type}</h3>
@@ -181,19 +206,22 @@ function App() {
                     <p>{alert.message}</p>
 
                     <small>
-                      IP: {alert.ip_address}
-                      {alert.username &&
-                        ` • User: ${alert.username}`}
-                    </small>
+  IP: {alert.ip_address}
+  {alert.username &&
+    ` • User: ${alert.username}`}
+  {alert.detected_at &&
+    ` • Detected: ${new Date(alert.detected_at).toLocaleString()}`}
+</small>
                   </div>
 
                   <div className="alert-status">
-  <select
-    value={alert.status}
-    onChange={(event) =>
-      updateAlertStatus(alert.id, event.target.value)
-    }
-  >
+                  <select
+  className={`alert-status-select status-${alert.status.toLowerCase()}`}
+  value={alert.status}
+  onChange={(event) =>
+    updateAlertStatus(alert.id, event.target.value)
+  }
+>
     <option value="NEW">NEW</option>
     <option value="REVIEWED">REVIEWED</option>
     <option value="RESOLVED">RESOLVED</option>
@@ -212,13 +240,24 @@ function App() {
   </div>
 
   <div className="threat-summary">
-    {Object.entries(threatSummary).map(([type, count]) => (
-      <div className="threat-item" key={type}>
+  {Object.entries(threatSummary).map(([type, count]) => (
+    <div className="threat-item" key={type}>
+      <div className="threat-label">
         <span>{type}</span>
         <strong>{count}</strong>
       </div>
-    ))}
-  </div>
+
+      <div className="threat-bar">
+        <div
+          className="threat-bar-fill"
+          style={{
+            width: `${(count / alerts.length) * 100}%`,
+          }}
+        ></div>
+      </div>
+    </div>
+  ))}
+</div>
 </section>
 
 <section className="panel">
@@ -234,10 +273,16 @@ function App() {
   className="log-search"
 />
 
-          {loading ? (
-            <div className="message">Loading logs...</div>
-          ) : (
-            <div className="table-wrapper">
+{loading ? (
+  <div className="message">Loading logs...</div>
+) : filteredLogs.length === 0 ? (
+  <div className="message">
+    {logs.length === 0
+      ? "No logs available."
+      : "No logs match your search."}
+  </div>
+) : (
+  <div className="table-wrapper">
               <table>
                 <thead>
                   <tr>
@@ -253,11 +298,25 @@ function App() {
                 <tbody>
                   {filteredLogs.map((log) => (
                     <tr key={log.id}>
-                      <td>{log.timestamp}</td>
+                      <td>
+  {log.timestamp
+    ? new Date(log.timestamp).toLocaleString()
+    : "-"}
+</td>
                       <td>{log.ip_address}</td>
                       <td>{log.event_type}</td>
                       <td>{log.username || "-"}</td>
-                      <td>{log.status || "-"}</td>
+                      <td>
+  {log.status ? (
+    <span
+      className={`log-status log-status-${log.status.toLowerCase()}`}
+    >
+      {log.status}
+    </span>
+  ) : (
+    "-"
+  )}
+</td>
                       <td>{log.request || "-"}</td>
                     </tr>
                   ))}
