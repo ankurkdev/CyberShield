@@ -10,6 +10,9 @@ function App() {
   const [analytics, setAnalytics] = useState(null);
   const [alertFilter, setAlertFilter] = useState("ALL");
   const [logSearch, setLogSearch] = useState("");
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState("");
 
   useEffect(() => {
     async function loadData() {
@@ -53,6 +56,60 @@ function App() {
   
     return () => clearInterval(refresh);
   }, []);
+
+  async function uploadLogs() {
+    if (!selectedFile) {
+      setUploadMessage("Please select a CSV file first.");
+      return;
+    }
+  
+    setUploading(true);
+    setUploadMessage("");
+  
+    try {
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+  
+      const response = await fetch(
+        "http://127.0.0.1:8000/logs/upload",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+  
+      const responseText = await response.text();
+  
+      console.log("Upload status:", response.status);
+      console.log("Upload response:", responseText);
+  
+      if (!response.ok) {
+        throw new Error(
+          `Upload failed (${response.status}): ${responseText}`
+        );
+      }
+  
+      const result = JSON.parse(responseText);
+  
+      setUploadMessage(
+        `${result.message} - ${result.records_inserted} records inserted.`
+      );
+  
+      setSelectedFile(null);
+  
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (error) {
+      console.error("UPLOAD ERROR:", error);
+  
+      setUploadMessage(
+        `Upload failed: ${error.message}`
+      );
+    } finally {
+      setUploading(false);
+    }
+  }
 
   async function updateAlertStatus(alertId, status) {
     try {
@@ -132,6 +189,44 @@ const resolvedAlerts = analytics?.alert_status?.RESOLVED || 0;
   {backendConnected ? "Backend Connected" : "Backend Offline"}
 </div>
       </header>
+
+      <section className="panel upload-panel">
+  <div className="panel-header">
+    <h2>Upload Security Logs</h2>
+    <span>CSV</span>
+  </div>
+
+  <div className="upload-area">
+    <input
+      type="file"
+      accept=".csv"
+      onChange={(event) => {
+        setSelectedFile(event.target.files[0] || null);
+        setUploadMessage("");
+      }}
+    />
+
+    <button
+      type="button"
+      onClick={uploadLogs}
+      disabled={uploading || !selectedFile}
+    >
+      {uploading ? "Uploading..." : "Upload Logs"}
+    </button>
+  </div>
+
+  {selectedFile && (
+    <div className="upload-file">
+      Selected: {selectedFile.name}
+    </div>
+  )}
+
+  {uploadMessage && (
+    <div className="message">
+      {uploadMessage}
+    </div>
+  )}
+</section>
 
       <main>
       {backendError && (

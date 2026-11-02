@@ -1,0 +1,11 @@
+﻿timestamp,ip_address,username,event_type,status,request,details
+2026-08-20T10:00:00,192.168.1.10,admin,LOGIN,SUCCESS,/login,Successful login
+2026-08-20T10:01:00,192.168.1.20,admin,LOGIN,FAILED,/login,Invalid password
+2026-08-20T10:02:00,192.168.1.20,admin,LOGIN,FAILED,/login,Invalid password
+2026-08-20T10:03:00,192.168.1.20,admin,LOGIN,FAILED,/login,Invalid password
+2026-08-20T10:04:00,192.168.1.20,admin,LOGIN,FAILED,/login,Invalid password
+2026-08-20T10:05:00,192.168.1.20,admin,LOGIN,FAILED,/login,Invalid password
+2026-08-20T10:06:00,10.0.0.50,user,LOGIN,SUCCESS,/login,Successful login
+2026-08-20T10:07:00,10.0.0.99,guest,REQUEST,FAILED,/admin,Unauthorized administrative request
+2026-08-20T10:08:00,10.0.0.99,guest,REQUEST,FAILED,/etc/passwd,Suspicious file access attempt
+2026-08-20T10:09:00,192.168.1.30,user,REQUEST,SUCCESS,/dashboard,Normal dashboard request

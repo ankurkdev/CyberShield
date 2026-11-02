@@ -9,7 +9,10 @@ FAILED_LOGIN_THRESHOLD = 3
 def detect_brute_force(db: Session):
     failed_logs = (
         db.query(Log)
-        .filter(Log.event_type == "LOGIN_FAILED")
+        .filter(
+            Log.status == "FAILED",
+            Log.event_type.in_(["LOGIN", "LOGIN_FAILED"])
+        )
         .all()
     )
 
@@ -23,21 +26,19 @@ def detect_brute_force(db: Session):
 
     for (ip_address, username), logs in attempts_by_account.items():
         if len(logs) >= FAILED_LOGIN_THRESHOLD:
-            threats.append(
-                {
-                    "threat_type": "BRUTE_FORCE",
-                    "severity": "HIGH",
-                    "ip_address": ip_address,
-                    "username": username,
-                    "failed_attempts": len(logs),
-                    "message": (
-                        f"Possible brute-force attack detected from "
-                        f"{ip_address}"
-                    ),
-                }
-            )
+            threats.append({
+                "threat_type": "BRUTE_FORCE",
+                "severity": "HIGH",
+                "ip_address": ip_address,
+                "username": username,
+                "failed_attempts": len(logs),
+                "message": (
+                    f"Possible brute-force attack detected from {ip_address}"
+                ),
+            })
 
     return threats
+
 
 SUSPICIOUS_REQUEST_PATTERNS = [
     "union select",
@@ -45,6 +46,8 @@ SUSPICIOUS_REQUEST_PATTERNS = [
     "' or '",
     "drop table",
     "<script",
+    "/etc/passwd",
+    "/admin",
 ]
 
 

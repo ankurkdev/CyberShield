@@ -61,34 +61,72 @@ async def upload_logs(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
 ):
-    contents = await file.read()
-    text = contents.decode("utf-8")
+    try:
+        contents = await file.read()
+        text = contents.decode("utf-8-sig")
+        reader = csv.DictReader(io.StringIO(text))
 
-    reader = csv.DictReader(io.StringIO(text))
+        required_columns = {
+            "timestamp",
+            "ip_address",
+            "event_type",
+        }
 
-    inserted = 0
+        if not reader.fieldnames or not required_columns.issubset(
+            set(reader.fieldnames)
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail="CSV must contain timestamp, ip_address, and event_type columns.",
+            )
 
-    for row in reader:
-        log = Log(
-            timestamp=datetime.fromisoformat(row["timestamp"]),
-            ip_address=row["ip_address"],
-            username=row.get("username"),
-            event_type=row["event_type"],
-            status=row.get("status"),
-            request=row.get("request"),
-            details=row.get("details"),
+        inserted = 0
+
+        for row in reader:
+            log = Log(
+                timestamp=datetime.fromisoformat(row["timestamp"].strip()),
+                ip_address=row["ip_address"].strip(),
+                username=row.get("username") or None,
+                event_type=row["event_type"].strip(),
+                status=row.get("status") or None,
+                request=row.get("request") or None,
+                details=row.get("details") or None,
+            )
+
+            db.add(log)
+            inserted += 1
+
+        # Save uploaded logs first
+        db.commit()
+
+        # Run threat detection
+        brute_force_threats = detect_brute_force(db)
+        suspicious_threats = detect_suspicious_requests(db)
+
+        all_threats = brute_force_threats + suspicious_threats
+
+        # Save detected threats as alerts
+        saved_alerts = save_threats_as_alerts(db, all_threats)
+
+        return {
+            "filename": file.filename,
+            "message": "Logs uploaded and analyzed successfully",
+            "records_inserted": inserted,
+            "threats_detected": len(all_threats),
+            "alerts_created": len(saved_alerts),
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as error:
+        db.rollback()
+        print("CSV UPLOAD ERROR:", repr(error))
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"CSV upload failed: {str(error)}",
         )
-
-        db.add(log)
-        inserted += 1
-
-    db.commit()
-
-    return {
-        "filename": file.filename,
-        "message": "Logs uploaded successfully",
-        "records_inserted": inserted,
-    }
 
 
 @app.get("/logs", response_model=LogsResponse)
